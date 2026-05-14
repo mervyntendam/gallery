@@ -299,7 +299,7 @@
   </p>
   <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
   <br>
-  <button onclick="saveToken()">Inloggen</button>
+  <button onclick="saveToken()">Log in</button>
 </div>
 
 <!-- Admin panel -->
@@ -494,7 +494,7 @@
     }
 
     renderGrid();
-    showStatus('success', `${done} foto's uploaded — vergeet niet op te slaan!`);
+    showStatus('success', `${done} photos uploaded — don't forget to save!`);
     setTimeout(hideStatus, 4000);
     fileInput.value = '';
   }
