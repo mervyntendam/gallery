@@ -292,9 +292,9 @@
 <div id="token-screen">
   <h2>GitHub Token</h2>
   <p>
-    Voer een GitHub Personal Access Token in met schrijftoegang tot de <strong>mervyntendam/gallery</strong> repo.<br><br>
+    Enter a GitHub Personal Access Token with write access to the <strong>mervyntendam/gallery</strong> repo.<br><br>
     <a href="https://github.com/settings/tokens/new?scopes=repo&description=UDRA+Gallery+Admin" target="_blank">
-      → Maak een token aan op GitHub
+      → Create a token on GitHub
     </a>
   </p>
   <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
@@ -305,10 +305,10 @@
 <!-- Admin panel -->
 <div id="admin">
   <div class="toolbar">
-    <span style="font-size:0.8rem;opacity:0.5;letter-spacing:0.1em">GALLERY BEHEER</span>
+    <span style="font-size:0.8rem;opacity:0.5;letter-spacing:0.1em">GALLERY MANAGEMENT</span>
     <div style="display:flex;gap:0.75rem">
-      <a href="../" target="_blank"><button class="secondary">↗ Bekijk gallery</button></a>
-      <button class="secondary" onclick="logout()">Uitloggen</button>
+      <a href="../" target="_blank"><button class="secondary">↗ View gallery</button></a>
+      <button class="secondary" onclick="logout()">Log out</button>
     </div>
   </div>
 
@@ -319,8 +319,8 @@
 
   <!-- Upload zone -->
   <div class="upload-zone" id="upload-zone">
-    <p>Sleep foto's hierheen of klik om te uploaden</p>
-    <button onclick="document.getElementById('file-input').click()">Foto's kiezen</button>
+    <p>Drag photos here or click to upload</p>
+    <button onclick="document.getElementById('file-input').click()">Choose photos</button>
     <input type="file" id="file-input" multiple accept="image/*">
   </div>
 
@@ -328,7 +328,7 @@
   <div class="grid" id="photo-grid"></div>
 
   <div class="save-bar">
-    <button onclick="saveConfig()" id="save-btn">Opslaan & publiceren</button>
+    <button onclick="saveConfig()" id="save-btn">Save & publish</button>
   </div>
 </div>
 
@@ -391,7 +391,7 @@
   // --- Init ---
   async function init() {
     if (!token) return;
-    showStatus('loading', 'Laden...');
+    showStatus('loading', 'Loading...');
     try {
       const data = await ghGet('gallery-config.json');
       configSha = data.sha;
@@ -401,7 +401,7 @@
       renderGrid();
       hideStatus();
     } catch (e) {
-      showStatus('error', 'Token ongeldig of geen toegang');
+      showStatus('error', 'Invalid token or no access');
       setTimeout(hideStatus, 3000);
     }
   }
@@ -430,7 +430,7 @@
       const del = document.createElement('button');
       del.className = 'delete-btn';
       del.innerHTML = '✕';
-      del.title = 'Verwijder uit gallery';
+      del.title = 'Remove from gallery';
       del.onclick = () => removePhoto(filename);
 
       const label = document.createElement('div');
@@ -457,7 +457,7 @@
 
   // --- Remove photo ---
   function removePhoto(filename) {
-    if (!confirm(`"${filename}" verwijderen uit de gallery?\n\nHet bestand blijft op GitHub staan.`)) return;
+    if (!confirm(`"${filename}" remove from the gallery?\n\nThe file will remain on GitHub.`)) return;
     config[activeTab] = config[activeTab].filter(f => f !== filename);
     renderGrid();
   }
@@ -479,22 +479,22 @@
   async function handleFiles(files) {
     const arr = Array.from(files);
     if (!arr.length) return;
-    showStatus('loading', `0 / ${arr.length} uploaden...`);
+    showStatus('loading', `0 / ${arr.length} uploading...`);
 
     let done = 0;
     for (const file of arr) {
       try {
         await uploadFile(file);
         done++;
-        showStatus('loading', `${done} / ${arr.length} geüpload`);
+        showStatus('loading', `${done} / ${arr.length} uploaded`);
       } catch (e) {
-        showStatus('error', `Fout bij ${file.name}: ${e.message}`);
+        showStatus('error', `Error uploading ${file.name}: ${e.message}`);
         await new Promise(r => setTimeout(r, 2000));
       }
     }
 
     renderGrid();
-    showStatus('success', `${done} foto's geüpload — vergeet niet op te slaan!`);
+    showStatus('success', `${done} foto's uploaded — vergeet niet op te slaan!`);
     setTimeout(hideStatus, 4000);
     fileInput.value = '';
   }
@@ -526,15 +526,15 @@
   async function saveConfig() {
     const btn = document.getElementById('save-btn');
     btn.disabled = true;
-    showStatus('loading', 'Opslaan...');
+    showStatus('loading', 'Saving...');
     try {
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
       const result = await ghPut('gallery-config.json', content, 'Update gallery config', configSha);
       configSha = result.content.sha;
-      showStatus('success', '✓ Opgeslagen! Gallery update over ~1 minuut.');
+      showStatus('success', '✓ Saved! Gallery will update in ~1 minute.');
       setTimeout(hideStatus, 4000);
     } catch (e) {
-      showStatus('error', `Fout: ${e.message}`);
+      showStatus('error', `Error: ${e.message}`);
       setTimeout(hideStatus, 4000);
     }
     btn.disabled = false;
