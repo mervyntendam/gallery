@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UDRA Gallery — Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    :root {
+      --bg: #504407;
+      --bg-dark: #3b3205;
+      --bg-card: #5e5010;
+      --text: #f0edcc;
+      --accent: #d4b84a;
+      --danger: #c0392b;
+      --success: #27ae60;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    h1 {
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 2rem;
+      opacity: 0.7;
+    }
+
+    /* Token screen */
+    #token-screen {
+      max-width: 480px;
+      margin: 4rem auto;
+      background: var(--bg-dark);
+      border-radius: 8px;
+      padding: 2rem;
+    }
+
+    #token-screen h2 {
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    #token-screen p {
+      font-size: 0.85rem;
+      opacity: 0.6;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    #token-screen a { color: var(--accent); }
+
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid rgba(240,237,204,0.2);
+      color: var(--text);
+      padding: 0.7rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      outline: none;
+    }
+
+    input:focus { border-color: var(--accent); }
+
+    button {
+      background: var(--accent);
+      color: #2a2200;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    button.danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(240,237,204,0.3);
+    }
+
+    /* Main admin */
+    #admin { display: none; max-width: 1200px; margin: 0 auto; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(240,237,204,0.2);
+      margin-bottom: 2rem;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: rgba(240,237,204,0.45);
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.7rem 2rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-weight: 400;
+    }
+
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed rgba(240,237,204,0.2);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+
+    .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(212,184,74,0.05);
+    }
+
+    .upload-zone p { opacity: 0.5; font-size: 0.9rem; margin-bottom: 1rem; }
+    .upload-zone input { display: none; }
+
+    /* Photo grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .photo-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--bg-dark);
+      cursor: grab;
+    }
+
+    .photo-item:active { cursor: grabbing; }
+    .photo-item.sortable-ghost { opacity: 0.3; }
+    .photo-item.sortable-chosen { box-shadow: 0 0 0 2px var(--accent); }
+
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    .photo-item .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(192,57,43,0.9);
+      color: white;
+      border: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+      padding: 0;
+    }
+
+    .photo-item:hover .delete-btn { opacity: 1; }
+
+    .photo-item .filename {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+      font-size: 0.65rem;
+      padding: 4px 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .photo-item:hover .filename { opacity: 1; }
+
+    /* Status bar */
+    #status {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-dark);
+      color: var(--text);
+      padding: 0.7rem 1.5rem;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      gap: 0.7rem;
+      z-index: 100;
+    }
+
+    #status.show { display: flex; }
+    #status.success { border: 1px solid var(--success); }
+    #status.error { border: 1px solid var(--danger); }
+    #status.loading { border: 1px solid var(--accent); }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(240,237,204,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .save-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(240,237,204,0.1);
+    }
+
+    .progress-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<h1>UDRA Gallery — Admin</h1>
+
+<!-- Token screen -->
+<div id="token-screen">
+  <h2>GitHub Token</h2>
+  <p>
+    Voer een GitHub Personal Access Token in met schrijftoegang tot de <strong>mervyntendam/gallery</strong> repo.<br><br>
+    <a href="https://github.com/settings/tokens/new?scopes=repo&description=UDRA+Gallery+Admin" target="_blank">
+      → Maak een token aan op GitHub
+    </a>
+  </p>
+  <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
+  <br>
+  <button onclick="saveToken()">Inloggen</button>
+</div>
+
+<!-- Admin panel -->
+<div id="admin">
+  <div class="toolbar">
+    <span style="font-size:0.8rem;opacity:0.5;letter-spacing:0.1em">GALLERY BEHEER</span>
+    <div style="display:flex;gap:0.75rem">
+      <a href="../" target="_blank"><button class="secondary">↗ Bekijk gallery</button></a>
+      <button class="secondary" onclick="logout()">Uitloggen</button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="atmosphere" onclick="switchTab('atmosphere')">Atmosphere</button>
+    <button class="tab-btn" data-tab="architecture" onclick="switchTab('architecture')">Architecture</button>
+  </nav>
+
+  <!-- Upload zone -->
+  <div class="upload-zone" id="upload-zone">
+    <p>Sleep foto's hierheen of klik om te uploaden</p>
+    <button onclick="document.getElementById('file-input').click()">Foto's kiezen</button>
+    <input type="file" id="file-input" multiple accept="image/*">
+  </div>
+
+  <!-- Photo grid -->
+  <div class="grid" id="photo-grid"></div>
+
+  <div class="save-bar">
+    <button onclick="saveConfig()" id="save-btn">Opslaan & publiceren</button>
+  </div>
+</div>
+
+<!-- Status -->
+<div id="status"></div>
+
+<script>
+  const OWNER = 'mervyntendam';
+  const REPO = 'gallery';
+  const BRANCH = 'main';
+  const API = 'https://api.github.com';
+
+  let token = localStorage.getItem('udra_gh_token') || '';
+  let config = { atmosphere: [], architecture: [] };
+  let configSha = '';
+  let activeTab = 'atmosphere';
+  let sortable = null;
+
+  // --- Auth ---
+  function saveToken() {
+    const val = document.getElementById('token-input').value.trim();
+    if (!val) return;
+    token = val;
+    localStorage.setItem('udra_gh_token', token);
+    init();
+  }
+
+  function logout() {
+    localStorage.removeItem('udra_gh_token');
+    token = '';
+    document.getElementById('admin').style.display = 'none';
+    document.getElementById('token-screen').style.display = 'block';
+  }
+
+  // --- API helpers ---
+  async function ghGet(path) {
+    const res = await fetch(`${API}/repos/${OWNER}/${REPO}/contents/${path}`, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return res.json();
+  }
+
+  async function ghPut(path, contentB64, message, sha) {
+    const body = { message, content: contentB64, branch: BRANCH };
+    if (sha) body.sha = sha;
+    const res = await fetch(`${API}/repos/${OWNER}/${REPO}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return res.json();
+  }
+
+  // --- Init ---
+  async function init() {
+    if (!token) return;
+    showStatus('loading', 'Laden...');
+    try {
+      const data = await ghGet('gallery-config.json');
+      configSha = data.sha;
+      config = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      document.getElementById('token-screen').style.display = 'none';
+      document.getElementById('admin').style.display = 'block';
+      renderGrid();
+      hideStatus();
+    } catch (e) {
+      showStatus('error', 'Token ongeldig of geen toegang');
+      setTimeout(hideStatus, 3000);
+    }
+  }
+
+  // --- Tabs ---
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    renderGrid();
+  }
+
+  // --- Render grid ---
+  function renderGrid() {
+    const grid = document.getElementById('photo-grid');
+    grid.innerHTML = '';
+
+    config[activeTab].forEach((filename, i) => {
+      const item = document.createElement('div');
+      item.className = 'photo-item';
+      item.dataset.filename = filename;
+
+      const img = document.createElement('img');
+      img.src = `../photos/${activeTab}/${filename}`;
+      img.loading = 'lazy';
+
+      const del = document.createElement('button');
+      del.className = 'delete-btn';
+      del.innerHTML = '✕';
+      del.title = 'Verwijder uit gallery';
+      del.onclick = () => removePhoto(filename);
+
+      const label = document.createElement('div');
+      label.className = 'filename';
+      label.textContent = filename;
+
+      item.appendChild(img);
+      item.appendChild(del);
+      item.appendChild(label);
+      grid.appendChild(item);
+    });
+
+    if (sortable) sortable.destroy();
+    sortable = Sortable.create(grid, {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: () => {
+        const items = grid.querySelectorAll('.photo-item');
+        config[activeTab] = Array.from(items).map(el => el.dataset.filename);
+      }
+    });
+  }
+
+  // --- Remove photo ---
+  function removePhoto(filename) {
+    if (!confirm(`"${filename}" verwijderen uit de gallery?\n\nHet bestand blijft op GitHub staan.`)) return;
+    config[activeTab] = config[activeTab].filter(f => f !== filename);
+    renderGrid();
+  }
+
+  // --- Upload ---
+  const uploadZone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+  async function handleFiles(files) {
+    const arr = Array.from(files);
+    if (!arr.length) return;
+    showStatus('loading', `0 / ${arr.length} uploaden...`);
+
+    let done = 0;
+    for (const file of arr) {
+      try {
+        await uploadFile(file);
+        done++;
+        showStatus('loading', `${done} / ${arr.length} geüpload`);
+      } catch (e) {
+        showStatus('error', `Fout bij ${file.name}: ${e.message}`);
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+
+    renderGrid();
+    showStatus('success', `${done} foto's geüpload — vergeet niet op te slaan!`);
+    setTimeout(hideStatus, 4000);
+    fileInput.value = '';
+  }
+
+  async function uploadFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const b64 = e.target.result.split(',')[1];
+        const filename = file.name;
+        const path = `photos/${activeTab}/${filename}`;
+
+        let sha;
+        try { const ex = await ghGet(path); sha = ex.sha; } catch {}
+
+        await ghPut(path, b64, `Upload ${filename}`, sha);
+
+        if (!config[activeTab].includes(filename)) {
+          config[activeTab].push(filename);
+        }
+        resolve();
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // --- Save config ---
+  async function saveConfig() {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    showStatus('loading', 'Opslaan...');
+    try {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
+      const result = await ghPut('gallery-config.json', content, 'Update gallery config', configSha);
+      configSha = result.content.sha;
+      showStatus('success', '✓ Opgeslagen! Gallery update over ~1 minuut.');
+      setTimeout(hideStatus, 4000);
+    } catch (e) {
+      showStatus('error', `Fout: ${e.message}`);
+      setTimeout(hideStatus, 4000);
+    }
+    btn.disabled = false;
+  }
+
+  // --- Status ---
+  function showStatus(type, msg) {
+    const el = document.getElementById('status');
+    el.className = `show ${type}`;
+    el.innerHTML = type === 'loading'
+      ? `<div class="spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+  }
+
+  function hideStatus() {
+    document.getElementById('status').className = '';
+  }
+
+  // --- Start ---
+  if (token) init();
+</script>
+
+</body>
+</html>
